@@ -5,8 +5,7 @@
     A privacy-focused native Android application designed to reveal and reduce digital exposure.
   </p>
   <p>
-    <a href="https://skillicons.dev"><img src="https://skillicons.dev/icons?i=kotlin,android,gradle,git,github" alt="Technologies" /></a>
-  </p>
+<a href="https://skillicons.dev"><img src="https://skillicons.dev/icons?i=kotlin,androidstudio,gradle,git,github" alt="Technologies" /></a>  </p>
 </div>
 
 ⸻
