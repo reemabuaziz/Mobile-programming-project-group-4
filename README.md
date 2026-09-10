@@ -17,3 +17,22 @@ Digital Shadow is a privacy-focused native Android application that helps users 
 The application analyzes digital exposure indicators and presents the results in a simple, clear, and actionable way, helping users become more aware of their online presence and improve their privacy.
 
 ⸻
+## Core Features
+
+- 🔍 **Digital Footprint Scan**  
+  Discover publicly exposed information and digital traces associated with the user.
+
+- 📊 **Exposure Score**  
+  Get a clear overview of the user's digital exposure through a simple privacy score.
+
+- 📧 **Email Exposure**  
+  Identify potentially exposed email addresses across online services.
+
+- 👤 **Username Reuse**  
+  Detect reused usernames across different platforms and services.
+
+- 🔐 **Security Recommendations**  
+  Provide actionable recommendations to help users reduce their digital exposure.
+
+- 🗑️ **Old Account Awareness**  
+  Highlight old or unused accounts that may need to be secured or removed.
