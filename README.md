@@ -73,3 +73,13 @@ The project aims to reduce unnecessary student expenses while minimizing electro
 The main goal of Project Material Exchange is to create a university-based sharing ecosystem where students can easily reuse materials instead of purchasing new ones.
 
 By connecting students who have unused project materials with students who need them, the application promotes **sustainability, affordability, and collaboration** within the university community.
+---
+
+## Milestone 2 — Stage 1
+
+### UI Prototype
+[Open Project Material Exchange in Figma](https://www.figma.com/design/pYJ3tZiuEZlltdclmaNnrE/Project-Material-Exchange---Milestone-2?node-id=3-20&t=GHMxwafS3Qg6O6Cy-1)
+
+### Documentation
+- [Wireframes](./docs/wireframes)
+- [Navigation Map](./docs/navigation-map.png)
