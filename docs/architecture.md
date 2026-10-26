@@ -4,11 +4,11 @@ System Architecture — Project Material Exchange
 
 Project Material Exchange is an Android application that helps university students publish, browse, and request reusable project materials.
 
-The application separates responsibilities into three layers: UI, Domain, and Data.
+The application follows a layered architecture consisting of the UI, Domain, and Data layers, which interact with Firebase backend services.
 
 2. UI Layer
 
-The UI layer displays screens and handles user interactions. Compose screens receive UI state and send events to their ViewModels.
+The UI layer displays information to the user, receives user interactions, and presents the current screen state.
 
 Planned classes:
 
@@ -17,59 +17,86 @@ Planned classes:
 * ItemDetailsViewModel
 * MyActivityViewModel
 
-The UI must not access repositories or storage directly.
+UI state and events:
+
+* ItemDetailsUiState
+* RequestClicked
+
+Data flow:
+
+* UI events flow from ItemDetailsScreen to ItemDetailsViewModel.
+* UI state flows from ItemDetailsViewModel to ItemDetailsRoute and then to ItemDetailsScreen.
+
+The UI layer must not access repositories or Firebase services directly.
 
 3. Domain Layer
 
-The Domain layer contains application use cases and repository interfaces.
+The Domain layer contains the application’s business logic and defines repository interfaces.
 
-Planned classes and contracts:
+Planned use cases:
 
 * RequestMaterialUseCase
 * ObserveListingUseCase
 * ObserveRequestEligibilityUseCase
 * ObserveSentRequestsUseCase
+
+Repository interfaces:
+
 * RequestRepository
 * ListingRepository
 * SessionRepository
 
-The Domain layer must not depend on Android or Firebase SDK types.
+The Domain layer defines the operations required by the application without depending directly on Firebase SDK implementation details.
 
 4. Data Layer
 
-The Data layer implements repository interfaces and accesses remote data sources.
+The Data layer implements the repository interfaces and communicates with remote data sources.
 
-Planned classes:
+Planned repository implementations:
 
 * RequestRepositoryImpl
 * ListingRepositoryImpl
 * SessionRepositoryImpl
+
+Planned data sources:
+
 * RequestRemoteDataSource
 * ListingRemoteDataSource
 * SessionDataSource
 
-Firebase-specific access remains in the Data layer.
+The repository implementations connect the Domain layer to the required remote data sources. Firebase-specific operations are handled within the Data layer.
 
-5. External Services
+5. Backend Services
 
-* Firebase Authentication provides authenticated student identity.
-* Cloud Firestore stores application records such as listings and requests.
-* Firebase Cloud Storage stores listing images.
+The application uses the following Firebase services:
 
-6. Unidirectional Data Flow
+* Firebase Authentication: Handles user authentication and identity.
+* Cloud Firestore: Stores application data, including listings and requests.
+* Firebase Cloud Storage: Stores listing images and other uploaded files.
 
-User events flow from ItemDetailsScreen to ItemDetailsViewModel. The ViewModel invokes RequestMaterialUseCase, which uses repository interfaces to perform the required operations.
+The Data layer communicates with these services through the Firebase SDK.
 
-The Data layer implements these interfaces and accesses remote data sources. Results return through the Domain layer to the ViewModel.
+6. Request Material Data Flow
 
-The ViewModel updates ItemDetailsUiState, and ItemDetailsRoute collects and passes the state to ItemDetailsScreen for rendering.
+The request material feature follows these steps:
 
-7. Dependency Rules
+1. The user interacts with ItemDetailsScreen.
+2. The screen sends a RequestClicked event to ItemDetailsViewModel.
+3. ItemDetailsViewModel invokes RequestMaterialUseCase.
+4. The use case communicates through the RequestRepository interface.
+5. RequestRepositoryImpl handles the repository operation and uses RequestRemoteDataSource when remote access is required.
+6. The Data layer communicates with the appropriate Firebase service.
+7. The operation result returns through the Data and Domain layers to the ViewModel.
+8. ItemDetailsViewModel updates ItemDetailsUiState.
+9. ItemDetailsRoute passes the updated state to ItemDetailsScreen, which displays the result.
 
-1. The UI layer does not access repositories or storage directly.
-2. The Domain layer defines use cases and repository interfaces.
-3. The Data layer implements repository interfaces defined in Domain.
-4. The Domain layer does not depend on Android or Firebase SDK types.
-5. UI events flow toward the ViewModel, while UI state flows from the ViewModel toward the UI.
+7. Architecture Rules
 
-This document describes the planned architecture and does not claim that all listed classes or backend operations have already been implemented.
+1. The UI layer handles screen rendering, user events, and UI state.
+2. The Domain layer contains use cases and repository interfaces.
+3. The Data layer implements the repository interfaces defined by the Domain layer.
+4. The UI layer must not access Firebase services directly.
+5. UI events flow upward from the screen to the ViewModel, while UI state flows downward to the screen.
+6. Firebase-specific implementation details remain in the Data layer.
+
+Note: This document describes the planned architecture and class responsibilities; it does not imply that every listed class or operation has already been implemented.
