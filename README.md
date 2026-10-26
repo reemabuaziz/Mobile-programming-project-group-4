@@ -50,3 +50,4 @@ Kotlin, Android Studio, Jetpack Compose, Firebase Authentication, Cloud Firestor
 - [AI use log](./docs/ai-use-log.md)
 
 > Architecture and class responsibilities are documented as the planned design. This README does not claim that every planned class or operation is already implemented.
+> Documentation review: architecture diagram, style guide, and AI use log are available in the docs folder. 
