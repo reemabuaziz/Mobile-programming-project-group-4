@@ -11,69 +11,26 @@
   </p>
 </div>
 
-⸻
+---
 
 ## About the Project
 
-Project Material Exchange is a student-focused mobile application designed to help university students reuse and exchange materials from academic and graduation projects.
+Project Material Exchange is a student-focused Android application that helps university students reuse and exchange materials from academic and graduation projects. Usable components such as sensors, Arduino or ESP32 boards, cables, motors, electronic parts, 3D-printing filament, and mechanical components often remain after projects are completed. The application helps students list those materials, browse and search for items, filter listings, and send requests to item owners instead of buying duplicate supplies.
 
-Students often have usable components such as sensors, Arduino or ESP32 boards, cables, motors, electronic parts, 3D-printing filament, and mechanical components left after completing their projects. At the same time, other students may need the same materials and end up purchasing them again.
-
-The application provides a simple platform where authenticated students can list reusable materials, browse available items, search and filter listings, and send requests directly to item owners.
-
-Listings and requests are managed through **Firebase**, with clear statuses such as **Available, Pending, Reserved, and Completed**, ensuring that the application always reflects the current state of each item.
-
-The project aims to reduce unnecessary student expenses while minimizing electronic, plastic, and mechanical waste by encouraging the reuse of existing project materials within the university community.
-
-⸻
+Listings and requests use clear states such as **Available, Pending, Reserved, and Completed**. Firebase services are planned for authentication, data storage, and listing images. The project promotes sustainability, affordability, and student collaboration by reducing unnecessary purchases and material waste.
 
 ## Core Features
 
-- 📦 **Material Listings**  
-  Students can post reusable materials from their academic and graduation projects.
-
-- 🔍 **Browse & Search**  
-  Explore available materials and quickly find specific components using search and filters.
-
-- 🧰 **Project Materials**  
-  Support a wide range of reusable items such as sensors, Arduino and ESP32 boards, cables, motors, electronic components, 3D-printing filament, and mechanical parts.
-
-- 📩 **Material Requests**  
-  Students can send requests to item owners when they need a listed material.
-
-- 🔄 **Listing Status Management**  
-  Track the current state of each material using clear statuses such as **Available, Pending, Reserved, and Completed**.
-
-- 🔐 **Student Authentication**  
-  Authenticated students can safely create listings, browse materials, and manage their requests.
-
-- ☁️ **Firebase Integration**  
-  Store and manage listings, requests, users, and application data through Firebase.
-
-- ♻️ **Waste Reduction**  
-  Encourage the reuse of existing project materials and help reduce electronic, plastic, and mechanical waste.
-
-- 💰 **Cost Reduction**  
-  Help students avoid unnecessary purchases by making reusable materials available within the university community.
-
-⸻
+- **Student authentication and profile:** create an account, sign in, view profile details, and sign out.
+- **Material listings:** publish reusable project materials with a photo, title, category, condition, quantity, exchange type, and pickup area.
+- **Browse, search, and filter:** discover materials by keyword and category.
+- **Material requests:** request an available listing owned by another student.
+- **Activity and notifications:** manage listings and sent/received requests and view status updates.
+- **Reuse impact:** encourage lower costs and less project-material waste.
 
 ## Technology Stack
 
-<p align="center">
-  <a href="https://skillicons.dev">
-    <img src="https://skillicons.dev/icons?i=kotlin,androidstudio,firebase,gradle,git,github" alt="Technology Stack" />
-  </a>
-</p>
-
-⸻
-
-## Project Goal
-
-The main goal of Project Material Exchange is to create a university-based sharing ecosystem where students can easily reuse materials instead of purchasing new ones.
-
-By connecting students who have unused project materials with students who need them, the application promotes **sustainability, affordability, and collaboration** within the university community.
----
+Kotlin, Android Studio, Jetpack Compose, Firebase Authentication, Cloud Firestore, Firebase Cloud Storage, Gradle, Git, and GitHub (planned/used as appropriate to the implementation stage).
 
 ## Milestone 2 — Stage 1
 
@@ -81,5 +38,15 @@ By connecting students who have unused project materials with students who need 
 [Open Project Material Exchange in Figma](https://www.figma.com/design/pYJ3tZiuEZlltdclmaNnrE/Project-Material-Exchange---Milestone-2?node-id=3-20&t=GHMxwafS3Qg6O6Cy-1)
 
 ### Documentation
-- [Wireframes](./docs/wireframes)
-- [Navigation Map](./docs/navigation-map.png)
+- [All documentation](./docs/)
+- [Wireframes — eight core screens](./docs/wireframes/)
+- [Navigation map](./docs/navigation-map.png)
+- [UI style guide](./docs/style-guide.md)
+
+## Milestone 2 — Stage 2
+
+- [System architecture diagram](./docs/architecture.png)
+- [System architecture description](./docs/architecture.md)
+- [AI use log](./docs/ai-use-log.md)
+
+> Architecture and class responsibilities are documented as the planned design. This README does not claim that every planned class or operation is already implemented.
