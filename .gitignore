@@ -1,3 +1,4 @@
+
 # Android Studio
 *.iml
 .gradle/
@@ -11,3 +12,23 @@
 
 # Kotlin
 .kotlin/
+
+# Android build outputs
+**/build/
+**/.gradle/
+**/local.properties
+
+# Generated files
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Signing and secrets
+*.jks
+*.keystore
+google-services.json
+
+# IDE and OS
+.DS_Store
+Thumbs.db
