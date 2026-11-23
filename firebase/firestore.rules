@@ -1,0 +1,481 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function validProfile(userId) {
+      let d = request.resource.data;
+
+      return d.keys().hasAll([
+               'userId', 'fullName', 'email', 'createdAt'
+             ])
+          && d.keys().hasOnly([
+               'userId', 'fullName', 'email', 'createdAt'
+             ])
+          && d.userId == userId
+          && d.fullName is string
+          && d.fullName.size() >= 2
+          && d.fullName.size() <= 100
+          && d.email == request.auth.token.email
+          && d.createdAt is int;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+                    && validProfile(userId);
+
+      allow update: if isOwner(userId)
+                    && validProfile(userId)
+                    && request.resource.data.userId
+                       == resource.data.userId
+                    && request.resource.data.email
+                       == resource.data.email
+                    && request.resource.data.createdAt
+                       == resource.data.createdAt;
+
+      allow delete: if false;
+    }
+
+    function validListing(listingId) {
+      let d = request.resource.data;
+
+      return d.keys().hasAll([
+               'listingId', 'ownerId', 'ownerName',
+               'title', 'category', 'condition', 'quantity',
+               'exchangeType', 'pickupArea', 'photoPath',
+               'description', 'status', 'createdAt', 'updatedAt'
+             ])
+          && d.keys().hasOnly([
+               'listingId', 'ownerId', 'ownerName',
+               'title', 'category', 'condition', 'quantity',
+               'exchangeType', 'pickupArea', 'photoPath',
+               'description', 'status', 'createdAt', 'updatedAt'
+             ])
+          && d.listingId == listingId
+          && d.ownerId == request.auth.uid
+          && d.ownerName is string
+          && d.ownerName ==
+             get(/databases/$(database)/documents/users/$(request.auth.uid))
+               .data.fullName
+          && d.title is string
+          && d.title.size() >= 3
+          && d.title.size() <= 120
+          && d.category in [
+               'Electronics', 'Boards', 'Filament', 'Motors', 'Other'
+             ]
+          && d.condition in ['NEW', 'LIKE_NEW', 'GOOD', 'FAIR']
+          && d.quantity is int
+          && d.quantity >= 1
+          && d.quantity <= 999
+          && d.exchangeType in ['FREE', 'EXCHANGE']
+          && d.pickupArea in [
+               'Engineering College', 'Computer Science College',
+               'Library', 'Student Center'
+             ]
+          && d.description is string
+          && d.description.size() <= 2000
+          && d.photoPath is string
+          && (
+               d.photoPath in ['arduino', 'filament']
+               || d.photoPath.matches(
+                 'gs://project-material-exchange[.]firebasestorage[.]app/'
+                 + 'listing_photos/' + request.auth.uid
+                 + '/' + listingId + '/[^/]+[.]jpg'
+               )
+             )
+          && d.status == 'AVAILABLE'
+          && d.createdAt is int
+          && d.updatedAt is int
+          && d.createdAt > 0
+          && d.updatedAt >= d.createdAt;
+    }
+
+    match /listings/{listingId} {
+      allow read: if signedIn();
+
+      allow create: if signedIn()
+                    && validListing(listingId);
+
+      allow update: if signedIn()
+                    && resource.data.ownerId == request.auth.uid
+                    && resource.data.status == 'AVAILABLE'
+                    && validListing(listingId)
+                    && request.resource.data.ownerId
+                       == resource.data.ownerId
+                    && request.resource.data.createdAt
+                       == resource.data.createdAt;
+
+      allow delete: if false;
+    }
+    function validRequestFields(requestId) {
+      let d = request.resource.data;
+      let item = get(
+        /databases/$(database)/documents/listings/$(d.listingId)
+      ).data;
+
+      return d.keys().hasAll([
+               'requestId', 'listingId', 'requesterId',
+               'requesterName', 'ownerId', 'itemTitle',
+               'status', 'createdAt', 'updatedAt',
+               'notificationId'
+             ])
+          && d.keys().hasOnly([
+               'requestId', 'listingId', 'requesterId',
+               'requesterName', 'ownerId', 'itemTitle',
+               'status', 'createdAt', 'updatedAt',
+               'notificationId'
+             ])
+          && d.requestId == requestId
+          && d.listingId is string
+          && d.requesterId == request.auth.uid
+          && requestId == d.listingId + '_' + request.auth.uid
+          && d.ownerId == item.ownerId
+          && d.ownerId != request.auth.uid
+          && item.status == 'AVAILABLE'
+          && d.itemTitle == item.title
+          && d.requesterName == get(
+               /databases/$(database)/documents/users/$(request.auth.uid)
+             ).data.fullName
+          && d.status == 'PENDING'
+          && d.createdAt is int
+          && d.updatedAt is int
+          && d.createdAt > 0
+          && d.updatedAt >= d.createdAt
+          && d.notificationId is string
+          && d.notificationId.size() > 0;
+    }
+
+    function hasNewRequestNotice(requestId) {
+      let d = request.resource.data;
+      let path =
+        /databases/$(database)/documents/notifications/$(d.notificationId);
+      let notice = getAfter(path).data;
+
+      return !exists(path)
+          && notice.notificationId == d.notificationId
+          && notice.requestId == requestId
+          && notice.userId == d.ownerId
+          && notice.type == 'NEW_REQUEST'
+          && notice.isRead == false
+          && notice.createdAt == d.updatedAt;
+    }
+
+    match /requests/{requestId} {
+      allow get: if signedIn()
+                 && (
+                   requestId.matches('.*_' + request.auth.uid)
+                   || resource.data.ownerId == request.auth.uid
+                 );
+
+      allow list: if signedIn()
+                  && (
+                    resource.data.requesterId == request.auth.uid
+                    || resource.data.ownerId == request.auth.uid
+                  );
+
+      allow create: if signedIn()
+                    && validRequestFields(requestId)
+                    && request.resource.data.createdAt
+                       == request.resource.data.updatedAt
+                    && hasNewRequestNotice(requestId);
+
+      allow update: if signedIn()
+                    && resource.data.requesterId == request.auth.uid
+                    && resource.data.status in ['REJECTED', 'CANCELLED']
+                    && validRequestFields(requestId)
+                    && request.resource.data.listingId
+                       == resource.data.listingId
+                    && request.resource.data.requesterId
+                       == resource.data.requesterId
+                    && request.resource.data.ownerId
+                       == resource.data.ownerId
+                    && request.resource.data.createdAt
+                       == resource.data.createdAt
+                    && request.resource.data.updatedAt
+                       > resource.data.updatedAt
+                    && request.resource.data.diff(resource.data)
+                       .affectedKeys().hasOnly([
+                         'status', 'updatedAt', 'notificationId',
+                         'requesterName', 'itemTitle'
+                       ])
+                    && hasNewRequestNotice(requestId);
+
+      allow delete: if false;
+    }
+
+    function validNewRequestNotice(notificationId) {
+      let n = request.resource.data;
+      let path =
+        /databases/$(database)/documents/requests/$(n.requestId);
+      let r = getAfter(path).data;
+
+      return n.keys().hasAll([
+               'notificationId', 'userId', 'requestId', 'type',
+               'title', 'message', 'isRead', 'createdAt'
+             ])
+          && n.keys().hasOnly([
+               'notificationId', 'userId', 'requestId', 'type',
+               'title', 'message', 'isRead', 'createdAt'
+             ])
+          && n.notificationId == notificationId
+          && r.notificationId == notificationId
+          && r.requesterId == request.auth.uid
+          && r.status == 'PENDING'
+          && (
+               !exists(path)
+               || get(path).data.status in ['REJECTED', 'CANCELLED']
+             )
+          && n.userId == r.ownerId
+          && n.type == 'NEW_REQUEST'
+          && n.title == 'New Request'
+          && n.message ==
+             r.requesterName + ' requested your ' + r.itemTitle + '.'
+          && n.isRead == false
+          && n.createdAt == r.updatedAt;
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn()
+                  && resource.data.userId == request.auth.uid;
+
+      allow create: if signedIn()
+                    && validNewRequestNotice(notificationId);
+
+      allow update: if signedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data)
+                       .affectedKeys().hasOnly(['isRead'])
+                    && request.resource.data.isRead == true;
+
+      allow delete: if false;
+    }
+    function ownerNoticeExists(
+      notificationId, requestId, recipientId, eventType, eventTime
+    ) {
+      let path =
+        /databases/$(database)/documents/notifications/$(notificationId);
+      let n = getAfter(path).data;
+
+      return !exists(path)
+          && n.notificationId == notificationId
+          && n.requestId == requestId
+          && n.userId == recipientId
+          && n.type == eventType
+          && n.createdAt == eventTime
+          && n.isRead == false;
+    }
+
+    function ownerRequestUpdate(requestId) {
+      let old = resource.data;
+      let d = request.resource.data;
+      let itemPath =
+        /databases/$(database)/documents/listings/$(old.listingId);
+      let beforeItem = get(itemPath).data;
+      let afterItem = getAfter(itemPath).data;
+
+      return old.ownerId == request.auth.uid
+          && beforeItem.ownerId == request.auth.uid
+          && d.updatedAt is int
+          && d.updatedAt > old.updatedAt
+          && d.notificationId is string
+          && (
+            (
+              old.status == 'PENDING'
+              && d.status == 'REJECTED'
+              && d.diff(old).affectedKeys().hasOnly([
+                'status', 'updatedAt', 'notificationId'
+              ])
+              && ownerNoticeExists(
+                d.notificationId,
+                requestId,
+                old.requesterId,
+                'REQUEST_REJECTED',
+                d.updatedAt
+              )
+            )
+            ||
+            (
+              old.status == 'PENDING'
+              && d.status == 'ACCEPTED'
+              && d.diff(old).affectedKeys().hasOnly([
+                'status', 'updatedAt', 'notificationId'
+              ])
+              && beforeItem.status == 'AVAILABLE'
+              && afterItem.status == 'RESERVED'
+              && afterItem.acceptedRequestId == requestId
+              && afterItem.updatedAt == d.updatedAt
+              && ownerNoticeExists(
+                d.notificationId,
+                requestId,
+                old.requesterId,
+                'REQUEST_ACCEPTED',
+                d.updatedAt
+              )
+            )
+            ||
+            (
+              old.status == 'ACCEPTED'
+              && d.status == 'COMPLETED'
+              && d.diff(old).affectedKeys().hasOnly([
+                'status', 'updatedAt', 'notificationId',
+                'completionOwnerNotificationId'
+              ])
+              && d.completionOwnerNotificationId is string
+              && d.completionOwnerNotificationId != d.notificationId
+              && beforeItem.status == 'RESERVED'
+              && beforeItem.acceptedRequestId == requestId
+              && afterItem.status == 'COMPLETED'
+              && afterItem.acceptedRequestId == requestId
+              && afterItem.updatedAt == d.updatedAt
+              && ownerNoticeExists(
+                d.notificationId,
+                requestId,
+                old.requesterId,
+                'EXCHANGE_COMPLETED',
+                d.updatedAt
+              )
+              && ownerNoticeExists(
+                d.completionOwnerNotificationId,
+                requestId,
+                old.ownerId,
+                'EXCHANGE_COMPLETED',
+                d.updatedAt
+              )
+            )
+          );
+    }
+
+    match /requests/{requestId} {
+      allow update: if signedIn()
+                    && ownerRequestUpdate(requestId);
+    }
+
+    function listingExchangeUpdate(listingId) {
+      let old = resource.data;
+      let d = request.resource.data;
+      let requestPath =
+        /databases/$(database)/documents/requests/$(d.acceptedRequestId);
+      let beforeRequest = get(requestPath).data;
+      let afterRequest = getAfter(requestPath).data;
+
+      return old.ownerId == request.auth.uid
+          && d.acceptedRequestId is string
+          && d.updatedAt is int
+          && d.updatedAt > old.updatedAt
+          && d.diff(old).affectedKeys().hasOnly([
+            'status', 'updatedAt', 'acceptedRequestId'
+          ])
+          && beforeRequest.listingId == listingId
+          && beforeRequest.ownerId == request.auth.uid
+          && afterRequest.listingId == listingId
+          && afterRequest.ownerId == request.auth.uid
+          && afterRequest.updatedAt == d.updatedAt
+          && (
+            (
+              old.status == 'AVAILABLE'
+              && d.status == 'RESERVED'
+              && beforeRequest.status == 'PENDING'
+              && afterRequest.status == 'ACCEPTED'
+            )
+            ||
+            (
+              old.status == 'RESERVED'
+              && d.status == 'COMPLETED'
+              && old.acceptedRequestId == d.acceptedRequestId
+              && beforeRequest.status == 'ACCEPTED'
+              && afterRequest.status == 'COMPLETED'
+            )
+          );
+    }
+
+    match /listings/{listingId} {
+      allow update: if signedIn()
+                    && listingExchangeUpdate(listingId);
+    }
+
+    function validOwnerEventNotice(notificationId) {
+      let n = request.resource.data;
+      let requestPath =
+        /databases/$(database)/documents/requests/$(n.requestId);
+      let beforeRequest = get(requestPath).data;
+      let afterRequest = getAfter(requestPath).data;
+      let item = getAfter(
+        /databases/$(database)/documents/listings/$(afterRequest.listingId)
+      ).data;
+
+      return n.keys().hasAll([
+               'notificationId', 'userId', 'requestId',
+               'type', 'title', 'message', 'isRead', 'createdAt'
+             ])
+          && n.keys().hasOnly([
+               'notificationId', 'userId', 'requestId',
+               'type', 'title', 'message', 'isRead', 'createdAt'
+             ])
+          && n.notificationId == notificationId
+          && beforeRequest.ownerId == request.auth.uid
+          && afterRequest.ownerId == request.auth.uid
+          && afterRequest.updatedAt > beforeRequest.updatedAt
+          && n.createdAt == afterRequest.updatedAt
+          && n.isRead == false
+          && (
+            (
+              beforeRequest.status == 'PENDING'
+              && afterRequest.status == 'ACCEPTED'
+              && notificationId == afterRequest.notificationId
+              && n.userId == afterRequest.requesterId
+              && n.type == 'REQUEST_ACCEPTED'
+              && n.title == 'Request Accepted'
+              && n.message ==
+                 'Your request for ' + item.title + ' was accepted.'
+            )
+            ||
+            (
+              beforeRequest.status == 'PENDING'
+              && afterRequest.status == 'REJECTED'
+              && notificationId == afterRequest.notificationId
+              && n.userId == afterRequest.requesterId
+              && n.type == 'REQUEST_REJECTED'
+              && n.title == 'Request Rejected'
+              && n.message ==
+                 'Your request for ' + item.title + ' was rejected.'
+            )
+            ||
+            (
+              beforeRequest.status == 'ACCEPTED'
+              && afterRequest.status == 'COMPLETED'
+              && n.type == 'EXCHANGE_COMPLETED'
+              && n.title == 'Exchange Completed'
+              && n.message ==
+                 'Your ' + item.title + ' exchange has been completed.'
+              && (
+                (
+                  notificationId == afterRequest.notificationId
+                  && n.userId == afterRequest.requesterId
+                )
+                ||
+                (
+                  notificationId ==
+                    afterRequest.completionOwnerNotificationId
+                  && n.userId == afterRequest.ownerId
+                )
+              )
+            )
+          );
+    }
+
+    match /notifications/{notificationId} {
+      allow create: if signedIn()
+                    && validOwnerEventNotice(notificationId);
+    }
+  }
+}
