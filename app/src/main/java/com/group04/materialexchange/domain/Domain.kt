@@ -64,6 +64,13 @@ interface ExchangeRepository {
     suspend fun complete(requestId: String)
     suspend fun markRead()
     suspend fun reload()
+    suspend fun signInWithGoogle(idToken: String) {
+        error("Google sign-in is unavailable in this repository.")
+    }
+
+    suspend fun resetPassword(email: String) {
+        error("Password reset is unavailable in this repository.")
+    }
 }
 
 class RequestMaterialUseCase(private val repository: ExchangeRepository) {

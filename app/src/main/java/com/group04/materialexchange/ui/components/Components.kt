@@ -38,6 +38,8 @@ import com.group04.materialexchange.R
 import com.group04.materialexchange.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.group04.materialexchange.data.ListingPhotoStorage
+import kotlinx.coroutines.CancellationException
 
 @Composable
 fun Glyph(name: String, modifier: Modifier = Modifier.size(24.dp), color: Color = Color.Black, description: String? = null) {
@@ -129,22 +131,112 @@ fun NoticeBox(title: String, text: String, actionLabel: String? = null, action: 
 }
 
 @Composable
-fun ItemPhoto(photo: String, title: String, modifier: Modifier = Modifier) {
+fun ItemPhoto(
+    photo: String,
+    title: String,
+    modifier: Modifier = Modifier
+) {
     val context = LocalContext.current
-    val bitmap by produceState<android.graphics.Bitmap?>(null,photo) {
-        if(photo.startsWith("content:") || photo.startsWith("file:")) {
-            value=withContext(Dispatchers.IO) {
-                runCatching { context.contentResolver.openInputStream(Uri.parse(photo))?.use {
-                    BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize=2 })
-                } }.getOrNull()
+
+    var loading by remember(photo) {
+        mutableStateOf(false)
+    }
+
+    var failed by remember(photo) {
+        mutableStateOf(false)
+    }
+
+    val bitmap by produceState<android.graphics.Bitmap?>(
+        initialValue = null,
+        key1 = photo
+    ) {
+        value = null
+        failed = false
+
+        val localPhoto =
+            photo.startsWith("content:") ||
+                    photo.startsWith("file:")
+
+        val remotePhoto = photo.startsWith("gs://")
+
+        if (localPhoto || remotePhoto) {
+            loading = true
+
+            try {
+                value = if (remotePhoto) {
+                    ListingPhotoStorage.load(photo)
+                } else {
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver
+                            .openInputStream(Uri.parse(photo))
+                            ?.use {
+                                BitmapFactory.decodeStream(
+                                    it,
+                                    null,
+                                    BitmapFactory.Options().apply {
+                                        inSampleSize = 4
+                                    }
+                                )
+                            }
+                    }
+                }
+
+                failed = value == null
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failed = true
+            } finally {
+                loading = false
             }
         }
     }
+
     when {
-        photo == "arduino" -> Image(painterResource(R.drawable.arduino),title,modifier,contentScale=ContentScale.Fit)
-        photo == "filament" -> Image(painterResource(R.drawable.filament),title,modifier,contentScale=ContentScale.Fit)
-        bitmap != null -> Image(bitmap!!.asImageBitmap(),title,modifier.clip(CardShape),contentScale=ContentScale.Crop)
-        else -> Box(modifier.background(Blush,CardShape),contentAlignment=Alignment.Center) { Glyph("photo",Modifier.size(48.dp),ReuseGreen,description=title) }
+        photo == "arduino" -> Image(
+            painter = painterResource(R.drawable.arduino),
+            contentDescription = title,
+            modifier = modifier,
+            contentScale = ContentScale.Fit
+        )
+
+        photo == "filament" -> Image(
+            painter = painterResource(R.drawable.filament),
+            contentDescription = title,
+            modifier = modifier,
+            contentScale = ContentScale.Fit
+        )
+
+        bitmap != null -> Image(
+            bitmap = bitmap!!.asImageBitmap(),
+            contentDescription = title,
+            modifier = modifier.clip(CardShape),
+            contentScale = ContentScale.Crop
+        )
+
+        else -> Box(
+            modifier = modifier.background(Blush, CardShape),
+            contentAlignment = Alignment.Center
+        ) {
+            when {
+                loading -> CircularProgressIndicator(
+                    modifier = Modifier.size(28.dp),
+                    color = ReuseGreen
+                )
+
+                failed -> Text(
+                    "Photo unavailable",
+                    color = Color.DarkGray
+                )
+
+                else -> Glyph(
+                    "photo",
+                    Modifier.size(48.dp),
+                    ReuseGreen,
+                    description = title
+                )
+            }
+        }
     }
 }
 
