@@ -3,6 +3,7 @@ package com.group04.materialexchange.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +26,7 @@ fun ItemDetailsScreen(
     val item=data.listings.firstOrNull{it.id==itemId}
     var confirm by remember { mutableStateOf(false) }
     var sent by remember { mutableStateOf(false) }
+    if(item==null && busy) { PageColumn { PageTitle("Item Details",back);Box(Modifier.fillMaxWidth().padding(24.dp),contentAlignment=Alignment.Center){CircularProgressIndicator()} };return }
     if(item==null) { PageColumn { PageTitle("Item Details",back);NoticeBox("Item not found","Return to the feed to choose a material.","Go back",back) };return }
     val error=ExchangeRules.requestError(item,data.student?.id.orEmpty(),data.requests)
     PageColumn {
