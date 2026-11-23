@@ -18,4 +18,4 @@ Test Example
 * Result: The material appeared in the Home Feed. Changes made in Firestore were reflected automatically without restarting the app.
   Conclusion
   The Home Feed successfully displays materials from Firebase Firestore. The tested search, category filtering, and real-time updates worked as expected.
-  No additional code changes were required because the Firebase integration was already implemented in the main branch.
+The Home Feed was tested with Firebase Firestore to verify that materials are retrieved and displayed correctly. I also enhanced the Home Feed by adding a dynamic materials count and displaying the quantity of each material.
