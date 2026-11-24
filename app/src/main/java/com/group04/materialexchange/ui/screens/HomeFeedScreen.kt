@@ -26,11 +26,18 @@ fun HomeFeedScreen(data: ExchangeData, openItem: (String)->Unit) {
     var condition by rememberSaveable { mutableStateOf("Any") }
     var type by rememberSaveable { mutableStateOf("Any") }
     var availableOnly by rememberSaveable { mutableStateOf(false) }
+    var sortBy by rememberSaveable { mutableStateOf("Default") }
+    var sortOpen by remember { mutableStateOf(false) }
     val items=data.listings.filter { i ->
         (category=="All" || i.category==category) &&
         (condition=="Any" || i.condition==condition) && (type=="Any" || i.exchangeType==type) &&
         (!availableOnly || i.status=="Available") &&
         (i.title.contains(search,true) || i.category.contains(search,true) || i.description.contains(search,true))
+    }
+    val sortedItems = when (sortBy) {
+        "Name (A-Z)" -> items.sortedBy { it.title.lowercase() }
+        "Name (Z-A)" -> items.sortedByDescending { it.title.lowercase() }
+        else -> items
     }
     PageColumn {
         Text("Project Material Exchange",fontSize=24.sp,fontWeight=FontWeight.Bold,
@@ -42,15 +49,51 @@ fun HomeFeedScreen(data: ExchangeData, openItem: (String)->Unit) {
                 colors=FilterChipDefaults.filterChipColors(containerColor=Blush,selectedContainerColor=MutedRose),
                 modifier=Modifier.heightIn(min=48.dp)) }
         }
-        OutlinedButton(onClick={filterOpen=true},shape=CardShape,colors=ButtonDefaults.outlinedButtonColors(containerColor=Blush)) {
-            Glyph("filter"); Spacer(Modifier.width(8.dp));Text("Filter${if(condition!="Any" || type!="Any" || availableOnly) " •" else ""}")
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+
+            OutlinedButton(
+                onClick = { filterOpen = true },
+                shape = CardShape,
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Blush)
+            ) {
+                Glyph("filter")
+                Spacer(Modifier.width(8.dp))
+                Text("Filter${if(condition!="Any" || type!="Any" || availableOnly) " •" else ""}")
+            }
+
+            Box {
+                OutlinedButton(
+                    onClick = { sortOpen = true },
+                    shape = CardShape,
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = Blush)
+                ) {
+                    Text("Sort")
+                }
+
+                DropdownMenu(
+                    expanded = sortOpen,
+                    onDismissRequest = { sortOpen = false }
+                ) {
+                    listOf("Default", "Name (A-Z)", "Name (Z-A)").forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(option) },
+                            onClick = {
+                                sortBy = option
+                                sortOpen = false
+                            }
+                        )
+                    }
+                }
+            }
         }
         Spacer(Modifier.height(8.dp))
         Text("Available Materials",fontSize=20.sp,fontWeight=FontWeight.Bold)
+        Text("${items.size} materials found", fontSize=14.sp, color=Color.Gray)
         if(items.isEmpty()) NoticeBox("No materials found", "Try another keyword or clear the filters.","Clear search & filters") {
             search="";category="All";condition="Any";type="Any";availableOnly=false
         }
-        items.forEach { i ->
+        sortedItems.forEach { i ->
             Card(onClick={openItem(i.id)}, modifier=Modifier.fillMaxWidth(),shape=CardShape,
                 colors=CardDefaults.cardColors(containerColor=Color.White),border=BorderStroke(1.dp,Color.Black)) {
                 Row(Modifier.padding(12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(16.dp)) {
@@ -58,6 +101,7 @@ fun HomeFeedScreen(data: ExchangeData, openItem: (String)->Unit) {
                     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(10.dp)) {
                         Text(i.title,fontWeight=FontWeight.Bold)
                         Text("Condition: ${i.condition}")
+                        Text("Quantity: ${i.quantity}")
                         Text(i.exchangeType,fontWeight=FontWeight.SemiBold)
                         StatusLabel(i.status)
                     }
