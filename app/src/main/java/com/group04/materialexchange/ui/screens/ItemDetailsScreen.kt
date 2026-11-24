@@ -3,6 +3,7 @@ package com.group04.materialexchange.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -25,8 +26,13 @@ fun ItemDetailsScreen(
     val item=data.listings.firstOrNull{it.id==itemId}
     var confirm by remember { mutableStateOf(false) }
     var sent by remember { mutableStateOf(false) }
+    var sending by remember { mutableStateOf(false) }
+    LaunchedEffect(busy) { if(!busy) sending=false }
+    if(item==null && busy) { PageColumn { PageTitle("Item Details",back);Box(Modifier.fillMaxWidth().padding(24.dp),contentAlignment=Alignment.Center){CircularProgressIndicator()} };return }
     if(item==null) { PageColumn { PageTitle("Item Details",back);NoticeBox("Item not found","Return to the feed to choose a material.","Go back",back) };return }
-    val error=ExchangeRules.requestError(item,data.student?.id.orEmpty(),data.requests)
+    val studentId=data.student?.id.orEmpty()
+    val error=ExchangeRules.requestError(item,studentId,data.requests)
+    val myRequest=data.requests.lastOrNull{it.itemId==item.id && it.senderId==studentId}
     PageColumn {
         PageTitle("Item Details",back)
         ItemPhoto(item.photo,item.title,Modifier.fillMaxWidth().height(240.dp))
@@ -39,13 +45,14 @@ fun ItemDetailsScreen(
             Text("Pickup Area: ${item.pickupArea}")
             Text("Owner: ${item.ownerName}")
             StatusLabel(item.status)
+            if(myRequest!=null) Text("Your request: ${myRequest.status}",fontWeight=FontWeight.SemiBold)
             if(item.description.isNotBlank()) Text(item.description)
         }
         if(error!=null) Text(error,fontSize=14.sp,color=Color.DarkGray)
-        RoseButton("Request Material",{confirm=true},enabled=error==null && !busy)
+        RoseButton(if(sending) "Sending..." else "Request Material",{confirm=true},enabled=error==null && !busy)
     }
     if(confirm) AlertDialog(onDismissRequest={confirm=false},title={Text("Request ${item.title}?")},text={Text("Send a request to ${item.ownerName}. Pickup is at ${item.pickupArea} after the owner accepts.")},
-        confirmButton={TextButton(onClick={confirm=false;onRequest(item.id) { sent = true }},enabled=!busy){Text("Send Request")}},
+        confirmButton={TextButton(onClick={confirm=false;sending=true;onRequest(item.id) { sent = true }},enabled=!busy){Text("Send Request")}},
         dismissButton={TextButton(onClick={confirm=false}){Text("Cancel")}})
     if(sent) AlertDialog(onDismissRequest={sent=false;activity()},title={Text("Request sent")},
         text={Text("Your request is now Pending. You can follow its status in Sent Requests.")},
