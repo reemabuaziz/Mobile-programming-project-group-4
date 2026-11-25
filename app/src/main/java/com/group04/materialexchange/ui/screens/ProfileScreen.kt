@@ -97,12 +97,35 @@ fun ProfileScreen(data: ExchangeData, busy: Boolean, vm: ExchangeViewModel) {
                 Text("Rate your app experience", fontWeight=FontWeight.Bold)
                 Text("Optional prototype feedback", fontSize=12.sp)
                 AndroidView(
-                    factory = { context -> RatingBar(context).apply { numStars = 5; stepSize = 0.5f; rating = appRating } },
+                    factory = { context ->
+                        RatingBar(context).apply {
+                            numStars = 5
+                            stepSize = 0.5f
+                            rating = appRating
+
+                            progressTintList =
+                                android.content.res.ColorStateList.valueOf(
+                                    android.graphics.Color.rgb(76, 175, 80)
+                                )
+
+                            progressBackgroundTintList =
+                                android.content.res.ColorStateList.valueOf(
+                                    android.graphics.Color.LTGRAY
+                                )
+
+                            secondaryProgressTintList =
+                                android.content.res.ColorStateList.valueOf(
+                                    android.graphics.Color.LTGRAY
+                                )
+                        }
+                    },
                     update = { view ->
                         view.rating = appRating
-                        view.setOnRatingBarChangeListener { _, rating, fromUser -> if (fromUser) appRating = rating }
+                        view.setOnRatingBarChangeListener { _, rating, fromUser ->
+                            if (fromUser) appRating = rating
+                        }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.wrapContentWidth(Alignment.Start)
                 )
                 Text(if (appRating > 0f) "Your rating: $appRating / 5" else "Choose a rating", fontSize=12.sp, textAlign=TextAlign.Start)
             }
