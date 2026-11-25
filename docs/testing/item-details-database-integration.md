@@ -7,6 +7,9 @@ The Item Details screen was verified against the existing Firebase-backed data f
 * Loading state: a progress indicator is shown while data is still syncing, instead of "Item not found".
 * Sending state: the request button shows "Sending..." until the request finishes.
 * Request status: when the signed-in student already requested the item, the screen shows "Your request: <status>".
+* Request status color: Accepted/Completed in green, Rejected in red, Pending in gray (same colors as the item status label).
+* Rejected request hint: after a rejection the screen shows "You can send a new request." since the rules allow requesting again.
+* Description heading: the item description now has a "Description" title.
 
 ## Manual Tests (Android emulator, Firebase Firestore)
 | Test | Result |
