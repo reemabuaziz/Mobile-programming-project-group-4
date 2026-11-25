@@ -13,6 +13,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.group04.materialexchange.domain.*
 import com.group04.materialexchange.ui.components.*
 import com.group04.materialexchange.ui.theme.ExchangeTheme
+import com.group04.materialexchange.ui.theme.RejectRed
+import com.group04.materialexchange.ui.theme.ReuseGreen
 
 @Composable
 fun ItemDetailsScreen(
@@ -45,8 +47,15 @@ fun ItemDetailsScreen(
             Text("Pickup Area: ${item.pickupArea}")
             Text("Owner: ${item.ownerName}")
             StatusLabel(item.status)
-            if(myRequest!=null) Text("Your request: ${myRequest.status}",fontWeight=FontWeight.SemiBold)
-            if(item.description.isNotBlank()) Text(item.description)
+            if(myRequest!=null) {
+                val requestColor=when(myRequest.status) { "Accepted","Completed" -> ReuseGreen; "Rejected" -> RejectRed; else -> Color.DarkGray }
+                Text("Your request: ${myRequest.status}",color=requestColor,fontWeight=FontWeight.SemiBold)
+                if(myRequest.status=="Rejected" && error==null) Text("You can send a new request.",fontSize=14.sp,color=Color.DarkGray)
+            }
+            if(item.description.isNotBlank()) {
+                Text("Description",fontWeight=FontWeight.SemiBold)
+                Text(item.description)
+            }
         }
         if(error!=null) Text(error,fontSize=14.sp,color=Color.DarkGray)
         RoseButton(if(sending) "Sending..." else "Request Material",{confirm=true},enabled=error==null && !busy)
